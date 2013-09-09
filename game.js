@@ -217,7 +217,7 @@ function getMouseCoords(event) {
   var x,y;
   x=(event.pageX);
   y=(event.pageY);
-  x+=250-document.width/2;
+  x+=258-window.innerWidth/2;
   y-=10;
   return {"x": x, "y": y};
 }
