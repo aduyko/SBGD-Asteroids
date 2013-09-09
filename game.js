@@ -5,6 +5,7 @@ var player = {
   radius:10,
   width:2,
   color:'white',
+  speed:2,
 }
 var mouseChaser = {
   x:0,
@@ -44,15 +45,22 @@ var Bullet = function(x,y){
 }
 var enemies=[];
 var Enemy = function(initHp){
-  this.x=Math.random()*canvas.width;
-  this.y=Math.random()*canvas.height;
+  this.angle=Math.random()*2*Math.PI;
+  this.x=player.x+800*Math.cos(this.angle);
+  this.y=player.y+800*Math.sin(this.angle);
   this.radius=Math.random()*30+10;
   this.width=2;
   this.color='gray';
-  this.speed=Math.random()*10+5;
+  this.speed=Math.random()*3+1;
   this.move=function(){
-    this.x+=this.speed*Math.cos(this.angle);
-    this.y+=this.speed*math.sin(this.angle);
+    this.x-=this.speed*Math.cos(this.angle);
+    this.y-=this.speed*Math.sin(this.angle);
+  }
+  this.isDead=function(){
+    if (this.x+this.radius>canvas.width+800) return true;
+    if (this.x-this.radius<-800) return true;
+    if (this.y+this.radius>canvas.height+800) return true;
+    if (this.y-this.radius<-800) return true;
   }
   this.hp=initHp;
 }
@@ -72,6 +80,12 @@ function init(){
   document.addEventListener('mousemove',function(e) {
     mousePos = getMouseCoords(e);
   },false);
+  document.addEventListener("keydown", function(e) {
+    keysDown[e.keyCode] = true;
+  },false);
+  document.addEventListener("keyup", function(e) {
+    delete keysDown[e.keyCode];
+  },false)
 }
 function run(){
   update();
@@ -92,16 +106,47 @@ function increaseCount(){
 setInterval(function(){
   document.getElementById("count").innerHTML='fps:'+count;
   count=0;
+  enemies.push(new Enemy());
 },1000);
 /*end fps stuff*/
 
 //logic
+var KEY_UP = 38;
+var KEY_DOWN = 40;
+var KEY_LEFT = 37;
+var KEY_RIGHT = 39;
 function update(){
+  if (KEY_UP in keysDown) { 
+    if (player.y-player.radius>=0) {
+      player.y -= player.speed;
+    }
+  }
+  if (KEY_DOWN in keysDown) { 
+    if (player.y+player.radius<=canvas.height) {
+      player.y += player.speed;
+    }
+  }
+  if (KEY_LEFT in keysDown) { 
+    if (player.x-player.radius >= 0) {
+      player.x -= player.speed;
+    }
+  }
+  if (KEY_RIGHT in keysDown) { 
+    if (player.x+player.radius <= canvas.width) {
+      player.x += player.speed;
+    }
+  }
   mouseChaser.update(mousePos.x,mousePos.y);
   for(var i=0;i<bullets.length;i++){
     bullets[i].move();
     if (bullets[i].isDead()){
       bullets.splice(i,1);
+    }
+  }
+  for(var i=0;i<enemies.length;i++){
+    enemies[i].move();
+    if (enemies[i].isDead()){
+      enemies.splice(i,1);
     }
   }
   if('mouse' in keysDown){
@@ -150,7 +195,14 @@ function renderBullets(){
   }
 }
 function renderEnemies(){
-
+  for (var i=0;i<enemies.length;i++){
+    ctx.beginPath();
+    ctx.arc(enemies[i].x, enemies[i].y, enemies[i].radius, 0, 2*Math.PI, false);
+    ctx.lineWidth = enemies[i].width;
+    ctx.strokeStyle = enemies[i].color;
+    ctx.stroke();
+    ctx.closePath();
+  }
 }
 //end rendering
 
