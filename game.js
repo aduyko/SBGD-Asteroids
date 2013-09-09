@@ -15,7 +15,7 @@ var mouseChaser = {
   color:'white',
   update: function(x,y){
     angle=Math.atan((y-player.y)/(x-player.x));
-    pos=(x<=player.x?-1:1);
+    pos=(x<player.x?-1:1);
     this.x=player.x+this.spawnDistance*Math.cos(angle)*pos;
     this.y=player.y+this.spawnDistance*Math.sin(angle)*pos;
   },
@@ -23,7 +23,7 @@ var mouseChaser = {
 var bullets=[];
 var Bullet = function(x,y){
   this.angle=Math.atan((y-player.y)/(x-player.x));
-  this.pos=(x<=player.x?-1:1);
+  this.pos=(x<player.x?-1:1);
   this.spawnDistance=15;
   this.x=player.x+this.spawnDistance*Math.cos(this.angle)*this.pos;
   this.y=player.y+this.spawnDistance*Math.sin(this.angle)*this.pos;
