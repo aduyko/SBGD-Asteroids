@@ -1,4 +1,5 @@
 //game objects
+var points = 0;
 var player = {
   x:250,
   y:250,
@@ -62,11 +63,12 @@ var Enemy = function(initHp){
     if (this.y+this.radius>canvas.height+800) return true;
     if (this.y-this.radius<-800) return true;
   }
-  this.hp=initHp;
+  this.hp=this.radius;
 }
 //end game objects
 
 //init and run
+var gameTimer; //used to end the game and start it again
 function init(){
   canvas = document.getElementById("canvas");
   ctx = canvas.getContext("2d");
@@ -86,14 +88,38 @@ function init(){
   document.addEventListener("keyup", function(e) {
     delete keysDown[e.keyCode];
   },false)
+  setup();
+}
+function setup(){
+  points=0;
+  player.x=250;
+  player.y=250;
+  bullets=[];
+  enemies=[];
 }
 function run(){
+  window.clearInterval(gameTimer);
   update();
   render();
   //temporary dumb loop set to non-ensured 60fps
-  setTimeout(function(){
-    run();
-    /*fps*/increaseCount();
+  gameTimer = setInterval(function(){
+    update();
+    render();
+    increaseCount(); //fps
+  },16.7)
+}
+function stop(){
+  window.clearInterval(gameTimer);
+  document.getElementById("points").innerHTML='points:'+0;
+  gameTimer = setInterval(function(){
+    ctx.font="18px arial";
+    ctx.fillStyle="white";
+    ctx.fillText("Game Over! Your score:"+points,150,240);
+    ctx.fillText("Press enter to restart!",170,260);
+    if(keysDown[13]){
+      setup();
+      run();
+    }
   },16.7)
 }
 //end init and run
@@ -116,6 +142,10 @@ var KEY_DOWN = 40;
 var KEY_LEFT = 37;
 var KEY_RIGHT = 39;
 function update(){
+  mouseChaser.update(mousePos.x,mousePos.y);
+  if('mouse' in keysDown){
+    bullets.push(new Bullet(mousePos.x,mousePos.y));
+  }
   if (KEY_UP in keysDown) { 
     if (player.y-player.radius>=0) {
       player.y -= player.speed;
@@ -136,23 +166,38 @@ function update(){
       player.x += player.speed;
     }
   }
-  mouseChaser.update(mousePos.x,mousePos.y);
-  for(var i=0;i<bullets.length;i++){
+  var deadBullets=[];
+  for(var i=bullets.length-1;i>=0;i--){
     bullets[i].move();
+    for (var j=0;j<enemies.length;j++) {
+      if(Math.sqrt(Math.pow(enemies[j].x-bullets[i].x,2)+Math.pow(enemies[j].y-bullets[i].y,2))<enemies[j].radius+bullets[i].radius){
+        deadBullets.push(i);
+        enemies[j].hp--;
+        if(enemies[j].hp<=0){
+          points+=Math.floor(enemies[j].radius);
+          document.getElementById("points").innerHTML='points:'+points;
+          enemies.splice(j,1);
+        }
+        break;
+      }
+    };
     if (bullets[i].isDead()){
       bullets.splice(i,1);
     }
   }
-  for(var i=0;i<enemies.length;i++){
+  for (var i=0;i<deadBullets.length; i++) {
+    bullets.splice(deadBullets[i],1);
+  };
+  for(var i=enemies.length-1;i>=0;i--){
     enemies[i].move();
+    if(Math.sqrt(Math.pow(enemies[i].x-player.x,2)+Math.pow(enemies[i].y-player.y,2))<enemies[i].radius+player.radius){
+      stop();
+      break;
+    }
     if (enemies[i].isDead()){
       enemies.splice(i,1);
     }
   }
-  if('mouse' in keysDown){
-    bullets.push(new Bullet(mousePos.x,mousePos.y));
-  }
-
 }
 //end logic
 
